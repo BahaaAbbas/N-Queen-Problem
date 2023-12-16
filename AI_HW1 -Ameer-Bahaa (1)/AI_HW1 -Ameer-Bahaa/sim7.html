@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+      integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    />
+    <link rel="stylesheet" href="/css/hill7.css" />
+
+    <title>7-Sim</title>
+  </head>
+
+  <body>
+    <div class="container">
+      <div class="mb-3 text-center">
+        <p class="h4 my-3" style="font-size: 50px">7 - Queen</p>
+      </div>
+      <a
+        class="btn btn-primary btn-lg"
+        href="pick.html"
+        role="button"
+        style="background-color: darkred; border-color: darkred"
+        >Return</a
+      >
+      <button
+        class="btn btn-primary btn-lg"
+        style="margin-left: 28rem"
+        onclick="reOrder(pieces);"
+      >
+        Reorder
+      </button>
+      <button
+        class="btn btn-primary btn-lg"
+        onclick="solve();"
+        style="margin-left: 1rem"
+      >
+        Play
+      </button>
+    </div>
+    <p id="details" class="h4 my-3" style="margin-left: 100px"></p>
+    <div id="chess" style="margin-top: -2rem">
+      <div id="wrap">
+        <div id="chess-board"></div>
+      </div>
+    </div>
+
+    <script>
+      // Register Pieces
+      const pieces = {
+        black: {
+          queen1: { pos: "A7", icon: "chess-queen" },
+          queen2: { pos: "B7", icon: "chess-queen" },
+          queen3: { pos: "C7", icon: "chess-queen" },
+          queen4: { pos: "D7", icon: "chess-queen" },
+          queen5: { pos: "E7", icon: "chess-queen" },
+          queen6: { pos: "F7", icon: "chess-queen" },
+          queen7: { pos: "G7", icon: "chess-queen" },
+        },
+      };
+      //
+      const N = 7; // board size
+      let counter9 = 0;
+      let attackGlobal = 0;
+      let currentHeuristic, parentHeuristic, bestHeuristic, nextHeuristic;
+      let bestMat = [];
+      let flagBreak = false;
+      let flagFoundZ = false;
+      let flagUpperBreak = false;
+      let flagReorder = false;
+      const initialTemperature = localStorage.getItem("temp");
+      const coolingRate = localStorage.getItem("cooling");
+      const maxIteration = localStorage.getItem("iteration");
+      let currentTemperature, DeltaE;
+      //
+      var randomMatrix10;
+      let details = document.getElementById("details");
+      //
+      const alphabet = "ABCDEFG";
+      const cols = ["G", "F", "E", "D", "C", "B", "A"];
+
+      var actions = {
+        createBoard: function () {
+          let board = document.querySelector("#chess-board");
+          for (i = 1; i <= 49; i++) {
+            let row = Math.floor((49 - i) / 7) + 1;
+            let col = 7 * (8 - row) - i + 1;
+            let color = "";
+
+            color = i % 2 === 0 ? "black" : "white";
+
+            board.insertAdjacentHTML(
+              "beforeend",
+              templates.square(color, i, row, col)
+            );
+          }
+        },
+
+        // Set the Pieces on the Chess Board
+        setPieces: function (pieces) {
+          let b = pieces.black;
+          actions.mapPieces(b, "black");
+        },
+
+        // Map the Pieces on the Chess Board for a Single Player
+        mapPieces: function (p, color) {
+          for (key in p) {
+            let pos = p.hasOwnProperty(key) ? p[key].pos : false;
+            let square = document.querySelector(
+              '.square[data-cell="' + pos + '"]'
+            );
+            if (square) {
+              square.insertAdjacentHTML(
+                "beforeend",
+                templates.piece(key, p[key], color)
+              );
+            }
+          }
+        },
+      };
+
+      var templates = {
+        // Chess Square
+        square: function (color, i, row, col) {
+          return `<div class="square ${color}" data-nth="${i}" data-row-num="${row}" data-square-color="${color}" data-col-letter="${
+            cols[col - 1]
+          }" data-col="${col}" data-cell="${cols[col - 1]}${row}"></div>`;
+        },
+        // Chess Piece
+        piece: function (key, piece, color) {
+          let pColor =
+            color === "black" ? "white" : color === "white" ? "black" : "";
+          return `<div id="chess-piece" class="chess-piece ${key}" data-piece="${key}" data-color="${pColor}" data-piece-start="${piece.pos}" data-position="${piece.pos}"><i class="fa-solid fa-${piece.icon} ${pColor}" data-color="${pColor}" data-piece="${piece.pos}" ></i></div>`;
+        },
+      };
+      //delete old pieces
+      function delDiv() {
+        for (let i = 0; i < N; i++) {
+          var gfg_down = document.getElementById("chess-piece");
+          gfg_down.parentNode.removeChild(gfg_down);
+        }
+        return;
+      }
+      // fn generate random board and assign queen to random row in each column
+      function RandomQueenBoard() {
+        let boardMatrix = [];
+
+        for (let i = 0; i < N; i++) {
+          boardMatrix.push(new Array(N).fill(0));
+        }
+
+        for (let j = 0; j < N; j++) {
+          // loop through all columns in matrix
+          let randomRow = Math.floor(Math.random() * N); // get random row number range from 0 to N ( N size of board)
+          // console.log("randomRowIndex= "+randomRow)
+          boardMatrix[randomRow][j] = 9; // fill all locations chooses by number 9 ..
+        }
+
+        return boardMatrix;
+      }
+      function setPos(setMatrix) {
+        for (i in setMatrix) {
+          for (j in setMatrix[i]) {
+            if (setMatrix[j][i] == 9) {
+              if (i == 0) {
+                if (j == 0) {
+                  pieces.black.queen1.pos = "A7";
+                } else if (j == 1) {
+                  pieces.black.queen1.pos = "A6";
+                } else if (j == 2) {
+                  pieces.black.queen1.pos = "A5";
+                } else if (j == 3) {
+                  pieces.black.queen1.pos = "A4";
+                } else if (j == 4) {
+                  pieces.black.queen1.pos = "A3";
+                } else if (j == 5) {
+                  pieces.black.queen1.pos = "A2";
+                } else if (j == 6) {
+                  pieces.black.queen1.pos = "A1";
+                }
+              } else if (i == 1) {
+                if (j == 0) {
+                  pieces.black.queen2.pos = "B7";
+                } else if (j == 1) {
+                  pieces.black.queen2.pos = "B6";
+                } else if (j == 2) {
+                  pieces.black.queen2.pos = "B5";
+                } else if (j == 3) {
+                  pieces.black.queen2.pos = "B4";
+                } else if (j == 4) {
+                  pieces.black.queen2.pos = "B3";
+                } else if (j == 5) {
+                  pieces.black.queen2.pos = "B2";
+                } else if (j == 6) {
+                  pieces.black.queen2.pos = "B1";
+                }
+              } else if (i == 2) {
+                if (j == 0) {
+                  pieces.black.queen3.pos = "C7";
+                } else if (j == 1) {
+                  pieces.black.queen3.pos = "C6";
+                } else if (j == 2) {
+                  pieces.black.queen3.pos = "C5";
+                } else if (j == 3) {
+                  pieces.black.queen3.pos = "C4";
+                } else if (j == 4) {
+                  pieces.black.queen3.pos = "C3";
+                } else if (j == 5) {
+                  pieces.black.queen3.pos = "C2";
+                } else if (j == 6) {
+                  pieces.black.queen3.pos = "C1";
+                }
+              } else if (i == 3) {
+                if (j == 0) {
+                  pieces.black.queen4.pos = "D7";
+                } else if (j == 1) {
+                  pieces.black.queen4.pos = "D6";
+                } else if (j == 2) {
+                  pieces.black.queen4.pos = "D5";
+                } else if (j == 3) {
+                  pieces.black.queen4.pos = "D4";
+                } else if (j == 4) {
+                  pieces.black.queen4.pos = "D3";
+                } else if (j == 5) {
+                  pieces.black.queen4.pos = "D2";
+                } else if (j == 6) {
+                  pieces.black.queen4.pos = "D1";
+                }
+              } else if (i == 4) {
+                if (j == 0) {
+                  pieces.black.queen5.pos = "E7";
+                } else if (j == 1) {
+                  pieces.black.queen5.pos = "E6";
+                } else if (j == 2) {
+                  pieces.black.queen5.pos = "E5";
+                } else if (j == 3) {
+                  pieces.black.queen5.pos = "E4";
+                } else if (j == 4) {
+                  pieces.black.queen5.pos = "E3";
+                } else if (j == 5) {
+                  pieces.black.queen5.pos = "E2";
+                } else if (j == 6) {
+                  pieces.black.queen5.pos = "E1";
+                }
+              } else if (i == 5) {
+                if (j == 0) {
+                  pieces.black.queen6.pos = "F7";
+                } else if (j == 1) {
+                  pieces.black.queen6.pos = "F6";
+                } else if (j == 2) {
+                  pieces.black.queen6.pos = "F5";
+                } else if (j == 3) {
+                  pieces.black.queen6.pos = "F4";
+                } else if (j == 4) {
+                  pieces.black.queen6.pos = "F3";
+                } else if (j == 5) {
+                  pieces.black.queen6.pos = "F2";
+                } else if (j == 6) {
+                  pieces.black.queen6.pos = "F1";
+                }
+              } else if (i == 6) {
+                if (j == 0) {
+                  pieces.black.queen7.pos = "G7";
+                } else if (j == 1) {
+                  pieces.black.queen7.pos = "G6";
+                } else if (j == 2) {
+                  pieces.black.queen7.pos = "G5";
+                } else if (j == 3) {
+                  pieces.black.queen7.pos = "G4";
+                } else if (j == 4) {
+                  pieces.black.queen7.pos = "G3";
+                } else if (j == 5) {
+                  pieces.black.queen7.pos = "G2";
+                } else if (j == 6) {
+                  pieces.black.queen7.pos = "G1";
+                }
+              }
+            }
+          }
+        }
+      }
+      //put pieces randomly on board
+      function reOrder() {
+        delDiv();
+        flagReorder = true;
+        randomMatrix10 = RandomQueenBoard();
+        setPos(randomMatrix10);
+        actions.setPieces(pieces);
+      }
+      //fn return the best boardMatrix ..
+      function BestToReturnSimulated(
+        boardMatrix,
+        initialTemperature,
+        coolingRate,
+        maxIteration
+      ) {
+        currentHeuristic = calculateHeuristic(boardMatrix); // calc current heuristic
+        bestHeuristic = currentHeuristic;
+        console.log("Current heuristic is = " + currentHeuristic);
+        currentTemperature = initialTemperature;
+        let nextRandomBoard = [];
+        let reachedIteration;
+
+        for (let i = 0; i < maxIteration; i++) {
+          // main for loop
+          //console.log("Iteration = "+i);
+          nextRandomBoard = RandomQueenBoard();
+          nextHeuristic = calculateHeuristic(nextRandomBoard);
+          console.log("NextHeuristic= " + nextHeuristic);
+
+          if (nextHeuristic === 0) {
+            // found a solution h = 0 ..
+            currentHeuristic = nextHeuristic;
+            bestHeuristic = currentHeuristic;
+            bestMat = nextRandomBoard.map((row) => row.slice());
+            reachedIteration = i + 1;
+            break; // break for loop
+          }
+
+          DeltaE = nextHeuristic - currentHeuristic;
+          //console.log("DeltaE= "+DeltaE);
+
+          if (DeltaE > 0) {
+            //means nextHeuristic is better than currentHeuristic
+
+            currentHeuristic = nextHeuristic;
+
+            if (currentHeuristic >= bestHeuristic) {
+              bestHeuristic = currentHeuristic;
+              bestMat = nextRandomBoard.map((row) => row.slice());
+              reachedIteration = i + 1;
+            }
+          } else if (Math.exp(-DeltaE / currentTemperature) > Math.random()) {
+            // means currentHeuristic is better than nextHeuristic
+            // means condition is applied
+            currentHeuristic = nextHeuristic;
+          }
+
+          currentTemperature =
+            initialTemperature *
+            Math.exp((-coolingRate * (i + 1)) / maxIteration); // range between 1 and 10
+        } // end for loop
+
+        console.log("-------------------\nbest Heuristic= " + bestHeuristic);
+        console.log(bestMat);
+        console.log("best solution at Iteration: " + reachedIteration);
+        console.log("final Temperature= " + currentTemperature);
+        console.log("coolingRate= " + coolingRate);
+        if (bestHeuristic == 0) {
+          details.innerText =
+            "Best Heuristic: " +
+            bestHeuristic +
+            " (Problem Solved)" +
+            " \n " +
+            "Best solution at Iteration: " +
+            reachedIteration +
+            " \n " +
+            "Final Temperature: " +
+            currentTemperature +
+            " \n " +
+            "Cooling Rate: " +
+            coolingRate;
+        } else {
+          details.innerText =
+            "Best Heuristic: " +
+            bestHeuristic +
+            " \n " +
+            "Best solution at Iteration: " +
+            reachedIteration +
+            " \n " +
+            "Final Temperature: " +
+            currentTemperature +
+            " \n " +
+            "Cooling Rate: " +
+            coolingRate;
+        }
+        return bestMat;
+      }
+      // fn calculateHeuristic for given boardMatrix
+      function calculateHeuristic(boardMatrix) {
+        let heuristic = 0;
+
+        // Check for column attack
+        const howManyAttackC = CalcColumnAttack(boardMatrix);
+
+        // check for diagonal attack
+        const howManyAttackD = DiagonalsSplitter(boardMatrix);
+
+        // Check for row attack
+        const howManyAttackR = CalcRowAttack(boardMatrix);
+
+        heuristic = howManyAttackC + howManyAttackD + howManyAttackR;
+
+        if (heuristic > 0) return -heuristic;
+        else return heuristic; // means its h(n)= 0 here..
+      }
+      // fn get matrix or board and return how many columns attacks (not needed , but ok)
+      function CalcColumnAttack(boardMatrix) {
+        const colCounts = Array(N).fill(0); // array size = N
+        let attackC = 0;
+
+        for (let row = 0; row < N; row++) {
+          for (let col = 0; col < N; col++) {
+            if (boardMatrix[row][col] === 9) {
+              colCounts[col]++;
+            }
+          }
+        }
+
+        for (let i = 0; i < colCounts.length; i++) {
+          //console.log("column= "+i +" how many in this Column= "+colCounts[i]);
+          if (colCounts[i] >= 2) {
+            attackC += 0.5 * (colCounts[i] - 1) * colCounts[i];
+          }
+        }
+
+        return attackC;
+      }
+      // fn to split all diagonals ascending and descending and calculate the heuristic fn diagonally to given matrix...
+      function DiagonalsSplitter(boardMatrix) {
+        let attackD = 0; // for calculate attack diagonalLy
+        const diagonals = [];
+
+        for (let i = 0; i < 2 * N - 1; i++) {
+          let diagonal = [];
+          const startRow = Math.max(0, i - N + 1);
+          const startCol = Math.max(0, N - 1 - i);
+          const count = Math.min(i + 1, 2 * N - 1 - i);
+
+          // Split ascending diagonals
+          for (let j = 0; j < count; j++) {
+            diagonal.push(boardMatrix[startRow + j][startCol + j]);
+          }
+          diagonals.push(diagonal);
+
+          diagonal = [];
+
+          // Split descending diagonals
+          for (let j = 0; j < count; j++) {
+            diagonal.push(boardMatrix[startRow + j][N - 1 - (startCol + j)]);
+          }
+          diagonals.push(diagonal);
+        }
+
+        // console.log("Test1->"+ diagonals)
+        //console.log("\nExtracted Diagonals:");
+
+        diagonals.forEach((diagonal) => {
+          // loop through all diagonals and find heuristic
+
+          // console.log(diagonal.join(" "));
+
+          for (let i = 0; i < diagonal.length; i++) {
+            if (diagonal[i] === 9) {
+              counter9++;
+            }
+          }
+
+          // console.log("\n" + diagonal )
+          // console.log("counter9= "+counter9);
+          if (counter9 >= 2) {
+            attackD += 0.5 * (counter9 - 1) * counter9; // equation give me number of attacks based on number of queen in each diagonal array
+          }
+          //console.log("attack = "+attackD);
+          counter9 = 0;
+        });
+        return attackD; // returned number of diagonal attacks
+      }
+      // fn get matrix or board and return how many rows attacks
+      function CalcRowAttack(boardMatrix) {
+        const rowCounts = Array(N).fill(0); // array size = N
+        let attackR = 0;
+
+        for (let row = 0; row < N; row++) {
+          for (let col = 0; col < N; col++) {
+            if (boardMatrix[row][col] === 9) {
+              rowCounts[row]++;
+            }
+          }
+        }
+
+        for (let i = 0; i < rowCounts.length; i++) {
+          //console.log("row= "+i +" how many in this Row= "+rowCounts[i]);
+          if (rowCounts[i] >= 2) {
+            attackR += 0.5 * (rowCounts[i] - 1) * rowCounts[i];
+          }
+        }
+
+        return attackR;
+      }
+      //show solve on board
+      function showSolve(bestMat) {
+        delDiv();
+        setPos(bestMat);
+        actions.setPieces(pieces);
+      }
+      //solve
+      function solve() {
+        if (flagReorder == true) {
+          BestToReturnSimulated(
+            randomMatrix10,
+            initialTemperature,
+            coolingRate,
+            maxIteration
+          );
+          showSolve(bestMat);
+          flagReorder = false;
+        }
+      }
+
+      actions.createBoard();
+      actions.setPieces(pieces);
+    </script>
+  </body>
+</html>

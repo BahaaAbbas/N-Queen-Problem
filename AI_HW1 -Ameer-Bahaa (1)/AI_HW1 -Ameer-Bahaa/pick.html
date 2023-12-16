@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css"
+    />
+    <link rel="stylesheet" href="/css/pick.css" />
+
+    <title>AI_PICK</title>
+  </head>
+  <body>
+    <div class="container" style="max-width: 800px; margin: 0 auto">
+      <div class="mb-3" style="margin-top: 200px">
+        <p class="h4 my-3">Please pick the size of the board:</p>
+        <select
+          class="form-select form-select-lg"
+          aria-label=".form-select-lg example"
+          id="boardSizeSelect"
+          style="max-width: 300px"
+        >
+          <option value="4">4x4</option>
+          <option value="5">5x5</option>
+          <option value="6">6x6</option>
+          <option value="7">7x7</option>
+          <option value="8">8x8</option>
+        </select>
+      </div>
+
+      <div class="mb-3 text-center">
+        <!-- Center the content inside this div -->
+        <p class="h4 my-3">Please choose the algorithm to play:</p>
+        <select
+          class="form-select form-select-lg mb-3"
+          aria-label=".form-select-lg example"
+          id="boardAlgo"
+          style="max-width: 300px"
+        >
+          <option value="hill">Hill Climbing</option>
+          <option value="sim">Simulated Annealing</option>
+        </select>
+      </div>
+
+      <div id="show" class="mb-3 text-center" style="display: none">
+        <p
+          style="
+            color: red;
+            font-size: 12px;
+            margin-left: -240px;
+            margin-bottom: -10px;
+            margin-top: 25px;
+          "
+        >
+          * this field for Simulated Annealing
+        </p>
+        <form id="form">
+          <label for="temp" class="h4 my-3" style="margin-right: 20px"
+            >Initial Temperature:</label
+          >
+          <input type="text" id="temp" /><br />
+
+          <p
+            style="
+              color: red;
+              font-size: 12px;
+              margin-bottom: -1rem;
+              margin-left: -17rem;
+            "
+          >
+            * Cooling values from 1 to 10
+          </p>
+
+          <label for="cooling" class="h4 my-3" style="margin-right: 86px"
+            >Cooling Rate:</label
+          >
+          <input type="text" id="cooling" /><br />
+
+          <label for="iteration" class="h4 my-3" style="margin-right: 19px"
+            >Maximum iteration:</label
+          >
+          <input type="text" id="iteration" /><br />
+
+          <button type="submit" class="btn btn-primary btn-lg">Play</button>
+        </form>
+      </div>
+      <button id="goPlay" onclick="go()" class="btn btn-primary btn-lg">
+        Play
+      </button>
+    </div>
+
+    <script>
+      const form = document.getElementById("form");
+      const temp = document.getElementById("temp");
+      const cooling = document.getElementById("cooling");
+      const iteration = document.getElementById("iteration");
+      const algo = document.getElementById("boardAlgo");
+      const boardSize = document.getElementById("boardSizeSelect");
+      const play = document.getElementById("goPlay");
+      const box = document.getElementById("show");
+
+      algo.addEventListener("change", function handleChange(event) {
+        if (event.target.value === "sim") {
+          box.style.display = "block";
+          play.style.display = "none";
+        } else {
+          box.style.display = "none";
+          play.style.display = "block";
+          play.style.marginLeft = "21rem";
+        }
+      });
+
+      function go() {
+        if (algo.value == "hill" && boardSize.value == 4) {
+          window.location.href = "hill4.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 5) {
+          window.location.href = "hill5.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 6) {
+          window.location.href = "hill6.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 7) {
+          window.location.href = "hill7.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 8) {
+          window.location.href = "hill8.html";
+        }
+        if (algo.value == "sim" && boardSize.value == 4) {
+          window.location.href = "sim4.html";
+        }
+        if (algo.value == "sim" && boardSize.value == 5) {
+          window.location.href = "sim5.html";
+        }
+        if (algo.value == "sim" && boardSize.value == 6) {
+          window.location.href = "sim6.html";
+        }
+        if (algo.value == "sim" && boardSize.value == 7) {
+          window.location.href = "sim7.html";
+        }
+        if (algo.value == "sim" && boardSize.value == 8) {
+          window.location.href = "sim8.html";
+        }
+      }
+      form.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        const tempValue = temp.value;
+        const coolingValue = cooling.value;
+        const iterationValue = iteration.value;
+
+        localStorage.setItem("temp", tempValue);
+        localStorage.setItem("cooling", coolingValue);
+        localStorage.setItem("iteration", iterationValue);
+        if (algo.value == "hill" && boardSize.value == 4) {
+          window.location.href = "hill4.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 5) {
+          window.location.href = "hill5.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 6) {
+          window.location.href = "hill6.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 7) {
+          window.location.href = "hill7.html";
+        }
+        if (algo.value == "hill" && boardSize.value == 8) {
+          window.location.href = "hill8.html";
+        }
+        if (
+          algo.value == "sim" &&
+          boardSize.value == 4 &&
+          cooling.value <= 10 &&
+          cooling.value >= 1
+        ) {
+          window.location.href = "sim4.html";
+        }
+        if (
+          algo.value == "sim" &&
+          boardSize.value == 5 &&
+          cooling.value <= 10 &&
+          cooling.value >= 1
+        ) {
+          window.location.href = "sim5.html";
+        }
+        if (
+          algo.value == "sim" &&
+          boardSize.value == 6 &&
+          cooling.value <= 10 &&
+          cooling.value >= 1
+        ) {
+          window.location.href = "sim6.html";
+        }
+        if (
+          algo.value == "sim" &&
+          boardSize.value == 7 &&
+          cooling.value <= 10 &&
+          cooling.value >= 1
+        ) {
+          window.location.href = "sim7.html";
+        }
+        if (
+          algo.value == "sim" &&
+          boardSize.value == 8 &&
+          cooling.value <= 10 &&
+          cooling.value >= 1
+        ) {
+          window.location.href = "sim8.html";
+        }
+      });
+    </script>
+  </body>
+</html>

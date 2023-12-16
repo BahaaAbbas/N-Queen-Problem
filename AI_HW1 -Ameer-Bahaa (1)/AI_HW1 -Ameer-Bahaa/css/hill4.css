@@ -1,0 +1,127 @@
+#boardContainer {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+  border: 2px solid #333;
+  padding: 5px;
+}
+.body {
+  background-color: aqua;
+}
+.cell {
+  width: calc(100% / 8); /* Adjust based on board size */
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-size: 24px;
+  border: 1px solid #333;
+  background-color: #f0f0f0;
+}
+
+.queen {
+  color: red;
+}
+
+#chess {
+  width: 52%;
+  height: 100%;
+  margin-left: 23.5rem;
+  margin-top: 30px;
+  padding: 0;
+  overflow-x: hidden;
+  position: fixed;
+  z-index: 1;
+}
+
+#wrap {
+  display: block;
+  margin: 1rem auto;
+  max-width: 90%;
+  width: 500px;
+  padding: 1rem;
+}
+
+#chess-board {
+  border: solid 3px black;
+  background: #eee;
+  display: inline-flex;
+  flex-wrap: wrap;
+}
+
+.square {
+  width: 141px;
+  height: 90px;
+  margin: 0;
+  padding-top: 12px;
+  border: 0;
+  max-width: 25%;
+  text-align: center;
+  display: inline-block;
+}
+
+.square.white,
+.chess-piece i.black {
+  background: white;
+}
+.square.black,
+.chess-piece i.white {
+  background: black;
+}
+
+.chess-piece i.black {
+  color: black !important;
+  border: solid 1px black;
+}
+.chess-piece i.white {
+  color: white !important;
+  border: solid 1px white;
+}
+
+.chess-piece i {
+  padding: 9px;
+  font-size: 33px;
+  margin-top: 0.5rem;
+  border-radius: 100%;
+  max-width: 90%;
+}
+
+.chess-panel {
+  padding: 0.5rem;
+  margin: 1rem auto;
+}
+.chess-panel-header {
+  text-align: center;
+}
+.chess-panel.white {
+  background: white;
+}
+.chess-panel.black {
+  background: black;
+}
+.white-text {
+  color: white;
+}
+.chess-panel.white .taken-pieces {
+  border: solid 1px black;
+}
+.chess-panel.black .taken-pieces {
+  border: solid 1px white;
+}
+
+@media screen and (max-width: 1024px) {
+  .chess-piece i {
+    margin-top: 0.5rem;
+    width: 15px;
+    height: 15px;
+    padding: 0.3rem;
+    line-height: 0.5;
+  }
+  .square {
+    height: 80px;
+    width: 80px;
+  }
+}

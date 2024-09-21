@@ -9,5 +9,5 @@ Solve  the N-queens problem using hill climbing and simulated annealing
 
 -Technologies Back-End: JavaScript.
 
--Course: Artificial Intelligence (Summer, 2023).
+
 
